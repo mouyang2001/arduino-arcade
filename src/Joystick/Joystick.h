@@ -11,7 +11,7 @@
  */
 class Joystick {
     public:
-        enum Direction { UP, DOWN, LEFT, RIGHT, NONE };
+        enum Direction { NONE, UP, DOWN, LEFT, RIGHT };
 
         Joystick(int pinX, int pinY, int pinButton, int analogBuffer, int analogResolution);
         

@@ -89,11 +89,11 @@ Joystick::Direction Joystick::getDirection()
     {
         return Joystick::Direction::LEFT;
     }
-    else if (yVal < analogMid + _analogBuffer)
+    else if (yVal < analogMid - _analogBuffer)
     {
         return Joystick::Direction::UP;
     }
-    else if (yVal > analogMid - _analogBuffer)
+    else if (yVal > analogMid + _analogBuffer)
     {
         return Joystick::Direction::DOWN;
     } 
