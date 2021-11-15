@@ -22,8 +22,8 @@
 #define LCD_PINS 0x27
 
 // Obstacle definitions.
-#define NUM_OBSTACLES 12
-#define OBSTACLE_START_X 4
+#define NUM_OBSTACLES 10
+#define OBSTACLE_START_X 5
 #define OBSTACLE_MAX_WIDTH 3
 
 // Character ids.
@@ -38,11 +38,11 @@ uint8_t bell[8] = {0x4, 0xe, 0xe, 0xe, 0x1f, 0x0, 0x4};
 uint8_t heart[8] = {0x0, 0xa, 0x1f, 0x1f, 0xe, 0x4, 0x0};
 uint8_t note[8] = {0x2, 0x3, 0x2, 0xe, 0x1e, 0xc, 0x0};
 
-unsigned long lastObstacleDelayTime = 0;
-unsigned long obstacleDelay = 1000;
+unsigned const long OBSTACLE_DELAY = 1000;
+unsigned long lastTimeObstacleDelay = 0;
 
-unsigned long lastPlayerDelayTime = 0;
-unsigned long playerDelay = 100;
+unsigned const long PLAYER_DELAY = 100;
+unsigned long lastTimePlayerDelay = 0;
 
 int score = 0;
 
@@ -67,26 +67,67 @@ void setup()
 
     lcdCreateCharacters();
     initializeObstacles();
+    gameStart();
 }
 
 void loop()
 {
-    // Game obstacles move and render in 1 second beats.
-    // TODO make it so we only render obstacles that are in the screen rather than player.
-    if ((millis() - lastObstacleDelayTime) > obstacleDelay)
+    if ((millis() - lastTimeObstacleDelay) > OBSTACLE_DELAY)
     {
-        lastObstacleDelayTime = millis();
+        lastTimeObstacleDelay = millis();
 
         updateObstacles();
         updateScore();
     }
 
-    if ((millis() - lastPlayerDelayTime) > playerDelay)
+    if ((millis() - lastTimePlayerDelay) > PLAYER_DELAY)
     {
-        lastPlayerDelayTime = millis();
+        lastTimePlayerDelay = millis();
 
-        renderPlayer();
         playerMovementHandler();
+    }
+
+    collisionCheck();
+}
+
+/* --------------- Scenes --------------- */
+void gameStart() {
+    while (!joyStick.isPressed()) {
+        lcd.setCursor(5, 1);
+        lcd.print("Duck Run ");
+        lcd.write(DUCK);
+        lcd.setCursor(2, 2);
+        lcd.print("> press to play");
+    }
+    lcd.clear();
+}
+
+void gameOver()
+{
+    lcd.clear();
+    while(true) {
+        lcd.setCursor(5, 1);
+        lcd.print("GAME OVER!");
+        lcd.setCursor(5, 2);
+        lcd.print("Score: ");
+        lcd.print(score);
+    }
+}
+
+/* --------------- Collision --------------- */
+void collisionCheck()
+{
+    int playerX = player.getX();
+    int playerY = player.getY();
+
+    for (int i = 0; i < NUM_OBSTACLES; i++)
+    {
+        int obstacleX = obstacles[i].getX();
+        int obstacleY = obstacles[i].getY();
+        if (obstacleX == playerX && obstacleY == playerY)
+        {
+            gameOver();
+        }
     }
 }
 
@@ -96,7 +137,6 @@ void initializeObstacles()
     for (int i = 0; i < NUM_OBSTACLES; i++)
     {
         obstacles[i].setPosition(random(OBSTACLE_START_X, SCREEN_WIDTH), random(0, SCREEN_HEIGHT));
-        obstacles[i].setSize(random(1, OBSTACLE_MAX_WIDTH), 1);
     }
 }
 
@@ -130,12 +170,8 @@ void unrenderObstacles()
     {
         int x = obstacles[i].getX();
         int y = obstacles[i].getY();
-        int width = obstacles[i].getWidth();
         lcd.setCursor(x, y);
-        for (int j = 0; j < width; j++)
-        {
-            lcd.write(' ');
-        }
+        lcd.write(' ');
     }
 }
 
@@ -169,6 +205,12 @@ void playerMovementHandler()
 {
     Joystick::Direction direction = joyStick.getDirection();
     Serial.println("Direction: " + String(direction));
+
+    if (direction != Joystick::Direction::NONE)
+    {
+        unrenderPlayer();
+    }
+
     if (direction == Joystick::Direction::UP)
         player.moveUp();
     else if (direction == Joystick::Direction::DOWN)
@@ -177,6 +219,13 @@ void playerMovementHandler()
         player.moveLeft();
     else if (direction == Joystick::Direction::RIGHT)
         player.moveRight();
+
+    renderPlayer();
+}
+
+void unrenderPlayer() {
+    lcd.setCursor(player.getX(), player.getY());
+    lcd.write(' ');
 }
 
 void renderPlayer()
