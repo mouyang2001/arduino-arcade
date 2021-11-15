@@ -6,7 +6,7 @@ Project aims to implement classic arcade games and more playable on the arduino 
 # How to install
 Firstly you will need an analog Joystick and LCD width I2C module.
 
-Then install the [LiquidCrystal_I2C] (https://github.com/johnrickman/LiquidCrystal_I2C) by Frank de Brabander to interface with a I2C LCD module.
+Then install the [LiquidCrystal_I2C](https://github.com/johnrickman/LiquidCrystal_I2C) by Frank de Brabander to interface with a I2C LCD module.
 
 Adjust PIN constants accordingly to your setup:
 
