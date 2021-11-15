@@ -3,6 +3,7 @@
 
 #include "src/Joystick/Joystick.h"
 #include "src/Player/Player.h"
+#include "src/Obstacle/Obstacle.h"
 
 // Joystick definitions.
 #define JOY_X A0
@@ -20,6 +21,9 @@
 #define SCREEN_HEIGHT 4
 #define LCD_PINS 0x27
 
+// Obstacle definitions.
+#define NUM_OBSTACLES 12
+
 // Character ids.
 #define DUCK 0
 #define LILYPAD 1
@@ -35,6 +39,7 @@ uint8_t note[8] = {0x2, 0x3, 0x2, 0xe, 0x1e, 0xc, 0x0};
 LiquidCrystal_I2C lcd(LCD_PINS, SCREEN_WIDTH, SCREEN_HEIGHT);
 Joystick joyStick(JOY_X, JOY_Y, JOY_BTN, ANALOG_BUFFER, ANALOG_RESOLUTION);
 Player player(PLAYER_START_X, PLAYER_START_Y);
+Obstacle obstacles[NUM_OBSTACLES];
 
 void lcdCreateCharacters()
 {
@@ -53,6 +58,7 @@ void setup()
     lcd.backlight();
 
     lcdCreateCharacters();
+    initializeObstacles();
 }
 
 void loop()
@@ -60,7 +66,20 @@ void loop()
     joyStick.debug();
     render();
     playerMovementHandler();
+    obstacleMovementHandler();
     delay(200);
+}
+
+void initializeObstacles() {
+    for (int i = 0; i < NUM_OBSTACLES; i++) {
+        // Offset by SCREEN_WIDTH to ensure player has starting room.
+        obstacles[i].setPosition(random(0, SCREEN_WIDTH - 1) + SCREEN_WIDTH, random(0, SCREEN_HEIGHT - 1));
+        obstacles[i].setSize(random(1, 3), 1);
+    }
+}
+
+void obstacleMovementHandler() {
+    
 }
 
 void playerMovementHandler()
@@ -90,7 +109,12 @@ void render()
 
 void renderObstacles()
 {
-    // TODO: render obstacles.
+    for (int i = 0; i < NUM_OBSTACLES; i++)
+    {
+        Obstacle obstacle = obstacles[i];
+        lcd.setCursor(obstacle.getX(), obstacle.getY());
+        lcd.write(LILYPAD);
+    }
 }
 
 void renderPlayer()
