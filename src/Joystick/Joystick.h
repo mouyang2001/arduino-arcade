@@ -13,6 +13,7 @@ class Joystick {
     public:
         enum Direction { NONE, UP, DOWN, LEFT, RIGHT };
 
+        Joystick() {};
         Joystick(int pinX, int pinY, int pinButton, int analogBuffer, int analogResolution);
         
         void debug();
