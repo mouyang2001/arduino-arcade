@@ -23,6 +23,8 @@
 
 // Obstacle definitions.
 #define NUM_OBSTACLES 12
+#define OBSTACLE_START_X 4
+#define OBSTACLE_MAX_WIDTH 3
 
 // Character ids.
 #define DUCK 0
@@ -35,6 +37,14 @@ uint8_t lilypad[8] = {0x0, 0xe, 0x15, 0x17, 0x11, 0xe, 0x0};
 uint8_t bell[8] = {0x4, 0xe, 0xe, 0xe, 0x1f, 0x0, 0x4};
 uint8_t heart[8] = {0x0, 0xa, 0x1f, 0x1f, 0xe, 0x4, 0x0};
 uint8_t note[8] = {0x2, 0x3, 0x2, 0xe, 0x1e, 0xc, 0x0};
+
+unsigned long lastObstacleDelayTime = 0;
+unsigned long obstacleDelay = 1000;
+
+unsigned long lastPlayerDelayTime = 0;
+unsigned long playerDelay = 100;
+
+int score = 0;
 
 LiquidCrystal_I2C lcd(LCD_PINS, SCREEN_WIDTH, SCREEN_HEIGHT);
 Joystick joyStick(JOY_X, JOY_Y, JOY_BTN, ANALOG_BUFFER, ANALOG_RESOLUTION);
@@ -52,8 +62,6 @@ void lcdCreateCharacters()
 
 void setup()
 {
-    Serial.begin(9600);
-
     lcd.init();
     lcd.backlight();
 
@@ -63,25 +71,100 @@ void setup()
 
 void loop()
 {
-    joyStick.debug();
-    render();
-    playerMovementHandler();
-    obstacleMovementHandler();
-    delay(200);
-}
+    // Game obstacles move and render in 1 second beats.
+    // TODO make it so we only render obstacles that are in the screen rather than player.
+    if ((millis() - lastObstacleDelayTime) > obstacleDelay)
+    {
+        lastObstacleDelayTime = millis();
 
-void initializeObstacles() {
-    for (int i = 0; i < NUM_OBSTACLES; i++) {
-        // Offset by SCREEN_WIDTH to ensure player has starting room.
-        obstacles[i].setPosition(random(0, SCREEN_WIDTH - 1) + SCREEN_WIDTH, random(0, SCREEN_HEIGHT - 1));
-        obstacles[i].setSize(random(1, 3), 1);
+        updateObstacles();
+        updateScore();
+    }
+
+    if ((millis() - lastPlayerDelayTime) > playerDelay)
+    {
+        lastPlayerDelayTime = millis();
+
+        renderPlayer();
+        playerMovementHandler();
     }
 }
 
-void obstacleMovementHandler() {
-    
+/* --------------- Obstacles --------------- */
+void initializeObstacles()
+{
+    for (int i = 0; i < NUM_OBSTACLES; i++)
+    {
+        obstacles[i].setPosition(random(OBSTACLE_START_X, SCREEN_WIDTH), random(0, SCREEN_HEIGHT));
+        obstacles[i].setSize(random(1, OBSTACLE_MAX_WIDTH), 1);
+    }
 }
 
+void updateObstacles()
+{
+    unrenderObstacles();
+    moveObstacles();
+    renderObstacles();
+}
+
+void moveObstacles()
+{
+    for (int i = 0; i < NUM_OBSTACLES; i++)
+    {
+        int newX = obstacles[i].getX() - 1;
+
+        // If off screen, reset to end of screen.
+        if (newX == -1)
+        {
+            newX = SCREEN_WIDTH - 1;
+            obstacles[i].setY(random(0, SCREEN_HEIGHT));
+        }
+
+        obstacles[i].setX(newX);
+    }
+}
+
+void unrenderObstacles()
+{
+    for (int i = 0; i < NUM_OBSTACLES; i++)
+    {
+        int x = obstacles[i].getX();
+        int y = obstacles[i].getY();
+        int width = obstacles[i].getWidth();
+        lcd.setCursor(x, y);
+        for (int j = 0; j < width; j++)
+        {
+            lcd.write(' ');
+        }
+    }
+}
+
+void renderObstacles()
+{
+    for (int i = 0; i < NUM_OBSTACLES; i++)
+    {
+        Obstacle obstacle = obstacles[i];
+        lcd.setCursor(obstacle.getX(), obstacle.getY());
+        lcd.write(LILYPAD);
+    }
+}
+
+/* --------------- Scoring --------------- */
+void updateScore()
+{
+    score++;
+    renderScore();
+}
+
+void renderScore()
+{
+    // TODO improve positioning of score.
+    // This could be done by finding the number of digits in the score.
+    lcd.setCursor(17, 0);
+    lcd.print(score);
+}
+
+/* --------------- Player --------------- */
 void playerMovementHandler()
 {
     Joystick::Direction direction = joyStick.getDirection();
@@ -96,36 +179,8 @@ void playerMovementHandler()
         player.moveRight();
 }
 
-/**
- * @brief Render various game elements on the LCD screen. Order matters for layers.
- */
-void render()
-{
-    lcd.clear();
-    renderPlayer();
-    renderObstacles();
-    renderScore();
-}
-
-void renderObstacles()
-{
-    for (int i = 0; i < NUM_OBSTACLES; i++)
-    {
-        Obstacle obstacle = obstacles[i];
-        lcd.setCursor(obstacle.getX(), obstacle.getY());
-        lcd.write(LILYPAD);
-    }
-}
-
 void renderPlayer()
 {
     lcd.setCursor(player.getX(), player.getY());
     lcd.write(DUCK);
-}
-
-void renderScore()
-{
-    lcd.setCursor(17, 0);
-    // TODO: score tracker.
-    lcd.print("021");
 }
