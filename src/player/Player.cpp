@@ -23,6 +23,26 @@ int Player::getY()
     return _posY;
 }
 
+int Player::getScore()
+{
+    return _score;
+}
+
+int Player::getLives()
+{
+    return life;
+}
+
+void Player::reduceLives()
+{
+    life--;
+}
+
+void Player::increaseScore()
+{
+    _score++;
+}
+
 void Player::moveUp()
 {
     if (_posY > 0)

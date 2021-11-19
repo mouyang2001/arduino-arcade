@@ -4,6 +4,7 @@
 #include "src/Joystick/Joystick.h"
 #include "src/Player/Player.h"
 #include "src/Obstacle/Obstacle.h"
+#include "src/Display/Display.h"
 
 // Joystick definitions.
 #define JOY_X A0
@@ -19,7 +20,7 @@
 // LCD screen definitions.
 #define SCREEN_WIDTH 20
 #define SCREEN_HEIGHT 4
-#define LCD_PINS 0x27
+#define LCD_ADDRESS 0x27
 
 // Obstacle definitions.
 #define NUM_OBSTACLES 10
@@ -29,14 +30,13 @@
 // Character ids.
 #define DUCK 0
 #define LILYPAD 1
+#define BELL 2
+#define HEART 3
 
-// Custom characters.
-// e.g {0,1,1,1,0} => 0xe
 uint8_t duck[8] = {0x0, 0xc, 0x1d, 0xf, 0xf, 0x6, 0x0};
 uint8_t lilypad[8] = {0x0, 0xe, 0x15, 0x17, 0x11, 0xe, 0x0};
 uint8_t bell[8] = {0x4, 0xe, 0xe, 0xe, 0x1f, 0x0, 0x4};
 uint8_t heart[8] = {0x0, 0xa, 0x1f, 0x1f, 0xe, 0x4, 0x0};
-uint8_t note[8] = {0x2, 0x3, 0x2, 0xe, 0x1e, 0xc, 0x0};
 
 unsigned const long OBSTACLE_DELAY = 1000;
 unsigned long lastTimeObstacleDelay = 0;
@@ -44,30 +44,26 @@ unsigned long lastTimeObstacleDelay = 0;
 unsigned const long PLAYER_DELAY = 100;
 unsigned long lastTimePlayerDelay = 0;
 
-int score = 0;
-
-LiquidCrystal_I2C lcd(LCD_PINS, SCREEN_WIDTH, SCREEN_HEIGHT);
+LiquidCrystal_I2C lcd(LCD_ADDRESS, SCREEN_WIDTH, SCREEN_HEIGHT);
 Joystick joyStick(JOY_X, JOY_Y, JOY_BTN, ANALOG_BUFFER, ANALOG_RESOLUTION);
 Player player(PLAYER_START_X, PLAYER_START_Y);
 Obstacle obstacles[NUM_OBSTACLES];
-
-void lcdCreateCharacters()
-{
-    lcd.createChar(0, duck);
-    lcd.createChar(1, lilypad);
-    lcd.createChar(2, bell);
-    lcd.createChar(3, heart);
-    lcd.createChar(4, note);
-}
 
 void setup()
 {
     lcd.init();
     lcd.backlight();
 
-    lcdCreateCharacters();
     initializeObstacles();
     gameStart();
+}
+
+void createCharacters()
+{
+    lcd.createChar(0, duck);
+    lcd.createChar(1, lilypad);
+    lcd.createChar(2, bell);
+    lcd.createChar(3, heart);
 }
 
 void loop()
@@ -110,7 +106,7 @@ void gameOver()
         lcd.print("GAME OVER!");
         lcd.setCursor(5, 2);
         lcd.print("Score: ");
-        lcd.print(score);
+        lcd.print(player.getScore());
     }
 }
 
@@ -185,19 +181,12 @@ void renderObstacles()
     }
 }
 
-/* --------------- Scoring --------------- */
+/* --------------- Score --------------- */
 void updateScore()
 {
-    score++;
-    renderScore();
-}
-
-void renderScore()
-{
-    // TODO improve positioning of score.
-    // This could be done by finding the number of digits in the score.
+    player.increaseScore();
     lcd.setCursor(17, 0);
-    lcd.print(score);
+    lcd.print(player.getScore());
 }
 
 /* --------------- Player --------------- */

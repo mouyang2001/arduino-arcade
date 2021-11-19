@@ -16,8 +16,12 @@ public:
 
     int getX();
     int getY();
+    int getScore();
+    int getLives();
 
     void setPosition(int x, int y);
+    void increaseScore();
+    void reduceLives();
 
     void moveUp();
     void moveDown();
@@ -31,6 +35,7 @@ private:
     int _posX;
     int _posY;
     int _score = 0;
+    int life = 3;
 };
 
 #endif
