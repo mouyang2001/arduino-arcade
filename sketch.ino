@@ -4,7 +4,7 @@
 #include "src/Joystick/Joystick.h"
 #include "src/Player/Player.h"
 #include "src/Obstacle/Obstacle.h"
-#include "src/Display/Display.h"
+#include "src/Coin/Coin.h"
 
 // Joystick definitions.
 #define JOY_X A0
@@ -24,10 +24,11 @@
 
 // Obstacle definitions.
 #define NUM_OBSTACLES 10
+#define NUM_COINS 12
 #define OBSTACLE_START_X 5
 #define OBSTACLE_MAX_WIDTH 3
 
-// Character ids.
+// Characters.
 #define DUCK 0
 #define LILYPAD 1
 #define BELL 2
@@ -44,26 +45,22 @@ unsigned long lastTimeObstacleDelay = 0;
 unsigned const long PLAYER_DELAY = 100;
 unsigned long lastTimePlayerDelay = 0;
 
+// Game Objects.
 LiquidCrystal_I2C lcd(LCD_ADDRESS, SCREEN_WIDTH, SCREEN_HEIGHT);
 Joystick joyStick(JOY_X, JOY_Y, JOY_BTN, ANALOG_BUFFER, ANALOG_RESOLUTION);
 Player player(PLAYER_START_X, PLAYER_START_Y);
 Obstacle obstacles[NUM_OBSTACLES];
+Coin coins[NUM_COINS];
 
 void setup()
 {
     lcd.init();
     lcd.backlight();
 
-    initializeObstacles();
-    gameStart();
-}
+    createCharacters();
+    createObstacles();
 
-void createCharacters()
-{
-    lcd.createChar(0, duck);
-    lcd.createChar(1, lilypad);
-    lcd.createChar(2, bell);
-    lcd.createChar(3, heart);
+    gameStart();
 }
 
 void loop()
@@ -122,17 +119,31 @@ void collisionCheck()
         int obstacleY = obstacles[i].getY();
         if (obstacleX == playerX && obstacleY == playerY)
         {
-            gameOver();
+            player.reduceLives();
+            
+            if (player.getLives() == 0)
+            {
+                gameOver();
+            }
         }
     }
 }
 
+/* --------------- Characters --------------- */
+void createCharacters()
+{
+    lcd.createChar(0, duck);
+    lcd.createChar(1, lilypad);
+    lcd.createChar(2, bell);
+    lcd.createChar(3, heart);
+}
+
 /* --------------- Obstacles --------------- */
-void initializeObstacles()
+void createObstacles()
 {
     for (int i = 0; i < NUM_OBSTACLES; i++)
     {
-        obstacles[i].setPosition(random(OBSTACLE_START_X, SCREEN_WIDTH), random(0, SCREEN_HEIGHT));
+        obstacles[i].setPosition(random(OBSTACLE_START_X, SCREEN_WIDTH), random(1, SCREEN_HEIGHT));
     }
 }
 
